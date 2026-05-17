@@ -14,9 +14,6 @@ COPY ./patches ./patches
 COPY ./server/package.json ./server/package.json
 COPY ./client/package.json ./client/package.json
 
-FROM node-base AS prod-deps
-RUN npm install --omit=dev
-
 FROM node-base AS build-deps
 RUN npm install
 
@@ -26,7 +23,11 @@ RUN npm run build:server
 RUN npm run build:client
 
 FROM node-base AS runtime
-COPY --from=prod-deps /app/node_modules ./node_modules
+# Csak a futáshoz szükséges dolgokat telepítjük ide, fejlesztői eszközök nélkül
+COPY package.json ./
+COPY ./server/package.json ./server/package.json
+RUN npm install --omit=dev
+
 COPY --from=build /app/server/dist ./server/dist
 COPY --from=build /app/client/dist ./client/dist
 COPY --from=go-build /app/torrent-server ./torrent-server
